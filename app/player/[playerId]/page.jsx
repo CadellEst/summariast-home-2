@@ -3,7 +3,7 @@
 import axios from "axios";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   RiForward10Fill,
   RiPlayCircleFill,
@@ -13,8 +13,9 @@ import {
 
 export default function page() {
   const { playerId } = useParams();
-  const [bookInfo, setBookInfo] = useState();
+  const [bookInfo, setBookInfo] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null)
   console.log(bookInfo);
 
   useEffect(() => {
@@ -25,40 +26,36 @@ export default function page() {
       setBookInfo(data);
     }
     getBookInfo();
-  }, []);
+  }, [playerId]);
 
-  window.onload = () => {
-    const myAudio = document.getElementById("my-audio");
-    const myControl = document.getElementById("my-control");
-
-    function switchState() {
-      if (myAudio.paused) {
-        myAudio.play();
-        myControl.textContent = "pause";
-        setPlaying(true);
-      } else {
-        myAudio.pause();
-        myControl.textContent = "play";
-        setPlaying(false);
-      }
+  const handlePlayPause = () => {
+    const audioElement = audioRef.current;
+    if (!audioElement) return
+    if (playing) {
+      audioElement.pause();
+      setPlaying(false);
+    } else {
+      audioElement.play();
+      setPlaying(true);
     }
-
-    function checkKey(e) {
-      if (e.code === "Space") {
-        switchState();
-      }
-    }
-
-    myControl.addEventListener(
-      "click",
-      () => {
-        switchState();
-      },
-      false
-    );
-
-    window.addEventListener("keyup", checkKey, false);
   };
+
+  const handleRewind = () => {
+    const audioElement = audioRef.current;
+    if(!audioElement) return;
+
+    audioElement.currentTime = Math.max(0, audioElement.currentTime - 10);
+  }
+
+  const handleForward = () => {
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+
+    audioElement.currentTime = Math.min(audioElement.duration, audioElement.currentTime + 10)
+  }
+
+
+  ;
 
   return (
     <div className="relative flex flex-col ml-[200px] w-[calc(100% - 200px)">
@@ -94,25 +91,25 @@ export default function page() {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          {bookInfo != undefined ? (
+          {bookInfo && (
             <audio
               id="my-audio"
               preload="metadata"
               src={bookInfo.audioLink}
-              controls
-            ></audio>
-          ) : null}
-          <button id="">
+              ref={audioRef}
+            />
+          )}
+          <button onClick={handleRewind}>
             <RiReplay10Fill className="w-6 h-6" />
           </button>
-          <button id="my-controls">
-            {playing === true ? (
+          <button onClick={handlePlayPause}>
+            {playing ? (
               <RiStopCircleFill className="w-8 h-8 mx-4" />
             ) : (
               <RiPlayCircleFill className="w-8 h-8 mx-4" />
             )}
           </button>
-          <button>
+          <button onClick={handleForward}>
             <RiForward10Fill className="w-6 h-6" />
           </button>
         </div>
